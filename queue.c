@@ -171,6 +171,22 @@ bool q_delete_mid(struct list_head *head)
 bool q_delete_dup(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
+    if (!head || list_empty(head)) {
+        return false;
+    }
+    element_t *cur, *next;
+    bool flag = false;
+    list_for_each_entry_safe (cur, next, head, list) {
+        if (&next->list != head && !strcmp(cur->value, next->value)) {
+            list_del(&cur->list);
+            q_release_element(cur);
+            flag = true;
+        } else if (flag) {
+            list_del(&cur->list);
+            q_release_element(cur);
+            flag = false;
+        }
+    }
     return true;
 }
 
@@ -178,19 +194,125 @@ bool q_delete_dup(struct list_head *head)
 void q_swap(struct list_head *head)
 {
     // https://leetcode.com/problems/swap-nodes-in-pairs/
+    q_reverseK(head, 2);
 }
 
 /* Reverse elements in queue */
-void q_reverse(struct list_head *head) {}
+void q_reverse(struct list_head *head)
+{
+    if (!head || list_empty(head))
+        return;
+
+    struct list_head *node, *safe;
+    list_for_each_safe (node, safe, head) {
+        list_move(node, head);
+    }
+}
 
 /* Reverse the nodes of the list k at a time */
 void q_reverseK(struct list_head *head, int k)
 {
     // https://leetcode.com/problems/reverse-nodes-in-k-group/
+    if (!head || list_empty(head))
+        return;
+
+    int count = k;
+    struct list_head *node, *safe, tmp, *tmp_head;
+    tmp_head = head;
+    INIT_LIST_HEAD(&tmp);
+    list_for_each_safe (node, safe, head) {
+        count--;
+        if (count == 0) {
+            count = k;
+            list_cut_position(&tmp, tmp_head, node);
+            q_reverse(&tmp);
+            list_splice(&tmp, tmp_head);
+            // safe->prev = node;
+            tmp_head = safe->prev;
+        }
+    }
+}
+
+struct list_head *mergeTwoLists(struct list_head *L1, struct list_head *L2)
+{
+    struct list_head *head, *ptr;
+    // head should be placed
+    if (strcmp(list_entry(L1, element_t, list)->value,
+               list_entry(L2, element_t, list)->value) <= 0) {
+        head = L1;
+        ptr = head;
+        L1 = L1->next;
+    } else {
+        head = L2;
+        ptr = head;
+        L2 = L2->next;
+    }
+
+    while (L1 && L2) {
+        if (strcmp(list_entry(L1, element_t, list)->value,
+                   list_entry(L2, element_t, list)->value) <= 0) {
+            ptr->next = L1;
+            L1->prev = ptr;
+            L1 = L1->next;
+        } else {
+            ptr->next = L2;
+            L2->prev = ptr;
+            L2 = L2->next;
+        }
+        ptr = ptr->next;
+    }
+
+    if (L1) {
+        ptr->next = L1;
+        L1->prev = ptr;
+    } else {
+        ptr->next = L2;
+        L2->prev = ptr;
+    }
+    head->prev = NULL;
+    return head;
+}
+
+struct list_head *mergeSort(struct list_head *head)
+{
+    if (!head->next)
+        return head;
+
+    struct list_head *slow = head, *fast = head;
+    // for(struct list_head *fast = head; fast && fast->next; fast =
+    // fast->next->next)
+    //     slow = slow->next;
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    slow->prev->next = NULL;
+    struct list_head *left, *right;
+    left = mergeSort(head);
+    right = mergeSort(slow);
+    return mergeTwoLists(left, right);
 }
 
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+
+    head->prev->next = NULL;
+    head->next = mergeSort(head->next);
+    struct list_head *last = head;
+    while (last->next)
+        last = last->next;
+
+    head->prev = last;
+    last->next = head;
+    head->next->prev = head;
+    //     head->next->prev->next = head;
+    //     head->prev = head->next->prev;
+    //     head->next->prev = head;
+}
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */

@@ -12,7 +12,7 @@ size
 it meerkat
 it bear
 it gerbil
-size
+size 
 sort
 rh bear
 rh
