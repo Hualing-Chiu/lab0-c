@@ -62,6 +62,12 @@ bool q_insert_head(struct list_head *head, char *s)
         return false;
     }
     return false;
+    // if(!(node->value = strdup(s))){
+    //     q_release_element(node);
+    //     return false;
+    // }
+    // list_add(&node->list, head);
+    // return true;
 }
 
 /* Insert an element at tail of queue */
@@ -86,6 +92,12 @@ bool q_insert_tail(struct list_head *head, char *s)
         return false;
     }
     return false;
+    //     if(!(node->value = strdup(s))){
+    //         q_release_element(node);
+    //         return false;
+    //     }
+    //     list_add_tail(&node->list, head);
+    //     return true;
 }
 
 /* Remove an element from head of queue */
@@ -278,14 +290,14 @@ struct list_head *mergeSort(struct list_head *head)
     if (!head->next)
         return head;
 
-    struct list_head *slow = head, *fast = head;
-    // for(struct list_head *fast = head; fast && fast->next; fast =
-    // fast->next->next)
-    //     slow = slow->next;
-    while (fast && fast->next) {
+    struct list_head *slow = head;
+    for (struct list_head *fast = head; fast && fast->next;
+         fast = fast->next->next)
         slow = slow->next;
-        fast = fast->next->next;
-    }
+    // while (fast && fast->next) {
+    //     slow = slow->next;
+    //     fast = fast->next->next;
+    // }
 
     slow->prev->next = NULL;
     struct list_head *left, *right;
@@ -309,9 +321,6 @@ void q_sort(struct list_head *head, bool descend)
     head->prev = last;
     last->next = head;
     head->next->prev = head;
-    //     head->next->prev->next = head;
-    //     head->prev = head->next->prev;
-    //     head->next->prev = head;
 }
 
 /* Remove every node which has a node with a strictly less value anywhere to
@@ -365,5 +374,20 @@ int q_descend(struct list_head *head)
 int q_merge(struct list_head *head, bool descend)
 {
     // https://leetcode.com/problems/merge-k-sorted-lists/
-    return 0;
+    if (!head || list_empty(head))
+        return 0;
+
+    if (list_is_singular(head))
+        return q_size(list_first_entry(head, queue_contex_t, chain)->q);
+
+    queue_contex_t *q1 = container_of(head->next, queue_contex_t, chain);
+    for (struct list_head *cur = head->next->next; cur != head;
+         cur = cur->next) {
+        queue_contex_t *q = container_of(cur, queue_contex_t, chain);
+        list_splice_init(q->q, q1->q);
+        q->size = 0;
+    }
+    q_sort(q1->q, false);
+    q1->size = q_size(q1->q);
+    return q1->size;
 }
