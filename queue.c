@@ -294,10 +294,6 @@ struct list_head *mergeSort(struct list_head *head)
     for (struct list_head *fast = head; fast && fast->next;
          fast = fast->next->next)
         slow = slow->next;
-    // while (fast && fast->next) {
-    //     slow = slow->next;
-    //     fast = fast->next->next;
-    // }
 
     slow->prev->next = NULL;
     struct list_head *left, *right;
